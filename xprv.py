@@ -3,11 +3,13 @@ from electrum import bitcoin
 import ecdsa, sys, datetime, argparse
 
 default_derivation_path = datetime.date.today().strftime( "m/%Y'/%m'/%d'" )
+key_types = [ 'standard', 'p2wpkh', 'p2wpkh-p2sh', 'p2wsh-p2sh', 'p2pkh', 'p2wsh' ]
+entropy_size = 32 #in bytes
     
 parser = argparse.ArgumentParser( description="Generate extended keys" )
 
 mkey_group = parser.add_mutually_exclusive_group( required=True )
-mkey_group.add_argument( "-g", "--generate-master", help="Generate master private key of type (standard|p2wpkh|p2wpkh-p2sh|p2wsh-p2sh|p2wsh)", dest="gen_master")
+mkey_group.add_argument( "-g", "--generate-master", help="Generate master private key of type (standard|p2wpkh|p2wpkh-p2sh|p2wsh-p2sh|p2wsh|p2pkh)", choices=key_types, dest="gen_master")
 mkey_group.add_argument( "-m", "--master", help="provide master private key \"-\" to read from stdin", dest="master_key" )
 
 output_group = parser.add_argument_group(description="Output options")
@@ -16,12 +18,9 @@ output_group.add_argument( "-p", "--xprv", help="Generate xprv (default is xpub)
 
 args = parser.parse_args()
 
-key_types = [ 'standard', 'p2wpkh', 'p2wpkh-p2sh', 'p2wsh-p2sh', 'p2pkh', 'p2wsh' ]
-
 master_key = args.master_key
-if args.gen_master in key_types:
+if args.gen_master:
     key_type = args.gen_master if args.gen_master != "p2pkh" else "standard"
-    entropy_size = 32 #in bytes
     entropy = ecdsa.util.randrange( pow( 2, entropy_size * 8 ) )
     entropy_in_bytes = entropy.to_bytes( entropy_size , sys.byteorder )
     xprv,xpub = bitcoin.bip32_root( entropy_in_bytes, key_type )
@@ -35,9 +34,9 @@ if bitcoin.is_bip32_derivation( derivation_path ):
         xprv,xpub = bitcoin.bip32_private_derivation( master_key,"m/", derivation_path )    
         sys.stderr.write( "Derivation Path: {}\n".format( derivation_path ) )
         if args.output_xprv:
-            print( xprv, end="" )
+            print( xprv )
         else:
-            print( xpub, end="" )
+            print( xpub )
     except BaseException:
         print( "Invalid Master Key" )
 else:
