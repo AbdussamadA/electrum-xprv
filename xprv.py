@@ -1,18 +1,19 @@
 #!/usr/bin/python3
 from electrum import bitcoin
-import ecdsa, sys, datetime, select, argparse
+import ecdsa, sys, datetime, argparse
 
-def default_derivation_path():
-    tdate = datetime.date.today()
-    return tdate.strftime( "m/%Y'/%m'/%d'" )
+default_derivation_path = datetime.date.today().strftime( "m/%Y'/%m'/%d'" )
     
 parser = argparse.ArgumentParser( description="Generate extended keys" )
+
 mkey_group = parser.add_mutually_exclusive_group( required=True )
 mkey_group.add_argument( "-g", "--generate-master", help="Generate master private key of type (standard|p2wpkh|p2wpkh-p2sh|p2wsh-p2sh|p2wsh)", dest="gen_master")
 mkey_group.add_argument( "-m", "--master", help="provide master private key \"-\" to read from stdin", dest="master_key" )
+
 output_group = parser.add_argument_group(description="Output options")
-output_group.add_argument( "-d", "--derivation-path", help="derivation path", dest="derivation_path", default=default_derivation_path, required=True)
+output_group.add_argument( "-d", "--derivation-path", help="derivation path", dest="derivation_path", default=default_derivation_path)
 output_group.add_argument( "-p", "--xprv", help="Generate xprv (default is xpub)", action="store_true", dest="output_xprv" )
+
 args = parser.parse_args()
 
 key_types = [ 'standard', 'p2wpkh', 'p2wpkh-p2sh', 'p2wsh-p2sh', 'p2pkh', 'p2wsh' ]
