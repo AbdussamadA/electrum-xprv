@@ -64,7 +64,7 @@ if bitcoin.is_bip32_derivation( derivation_path ):
 			xprv,xpub = bitcoin.bip32_private_derivation( master_key,"m/", derivation_path )    
 			sys.stderr.write( "Derivation Path: {}\n".format( derivation_path ) )
 		except BaseException:
-			sys.stderr.write( "Invalid Master Key\n" )
+			sys.stderr.write( "Invalid derivation path\n" )
 		else:
 			if args.output_xprv:
 				print( xprv )
