@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-from electrum import bitcoin
+from electrum import bip32
 import ecdsa, sys, datetime, argparse
 
 default_derivation_path = "m/"
@@ -25,7 +25,7 @@ if args.gen_master:
     key_type = args.gen_master if args.gen_master != "p2pkh" else "standard"
     entropy = ecdsa.util.randrange( pow( 2, entropy_size * 8 ) )
     entropy_in_bytes = entropy.to_bytes( entropy_size , sys.byteorder )
-    xprv,xpub = bitcoin.bip32_root( entropy_in_bytes, key_type )
+    xprv,xpub = bip32.bip32_root( entropy_in_bytes, key_type )
     master_key = xprv
 elif args.master_key == "-":
     master_key = sys.stdin.readline().strip()
@@ -35,33 +35,33 @@ if args.convert:
         sys.exit( "Convert option cannot be used with generate master option" )
     else:
         convert_type = args.convert if args.convert !="p2pkh" else "standard"
-        if bitcoin.is_xpub(master_key):
-            xtype, depth, fingerprint, child_number, c, K_or_k = bitcoin.deserialize_xpub( master_key )
-            master_key = bitcoin.serialize_xpub( convert_type, c,  K_or_k, depth, fingerprint, child_number )
-        elif bitcoin.is_xprv(master_key):
-            xtype, depth, fingerprint, child_number, c, K_or_k = bitcoin.deserialize_xprv( master_key )
-            master_key = bitcoin.serialize_xprv( convert_type, c,  K_or_k, depth, fingerprint, child_number )
+        if bip32.is_xpub(master_key):
+            xtype, depth, fingerprint, child_number, c, K_or_k = bip32.deserialize_xpub( master_key )
+            master_key = bip32.serialize_xpub( convert_type, c,  K_or_k, depth, fingerprint, child_number )
+        elif bip32.is_xprv(master_key):
+            xtype, depth, fingerprint, child_number, c, K_or_k = bip32.deserialize_xprv( master_key )
+            master_key = bip32.serialize_xprv( convert_type, c,  K_or_k, depth, fingerprint, child_number )
         else:
             sys.exit( "Master key is not a valid extended key" )
 
 derivation_path = args.derivation_path if args.derivation_path != "m" else "m/"
-if bitcoin.is_bip32_derivation( derivation_path ):
-	if bitcoin.is_xpub(master_key):
+if bip32.is_bip32_derivation( derivation_path ):
+	if bip32.is_xpub(master_key):
 		if args.output_xprv:
 				sys.exit( "Cannot derive extended private key from extended public key\n" )
 		if derivation_path == "m/":
 			print( master_key )
 		else:
 			try:
-				xpub = bitcoin.bip32_public_derivation( master_key, "m/", derivation_path )
+				xpub = bip32.bip32_public_derivation( master_key, "m/", derivation_path )
 				sys.stderr.write( "Derivation Path: {}\n".format( derivation_path ) )
 			except BaseException:
 				sys.exit( "Invalid derivation path. Private derivation is not possible with extended public keys.\n" )
 			else:
 				print( xpub )
-	elif bitcoin.is_xprv( master_key ):
+	elif bip32.is_xprv( master_key ):
 		try:
-			xprv,xpub = bitcoin.bip32_private_derivation( master_key,"m/", derivation_path )    
+			xprv,xpub = bip32.bip32_private_derivation( master_key,"m/", derivation_path )    
 			sys.stderr.write( "Derivation Path: {}\n".format( derivation_path ) )
 		except BaseException:
 			sys.stderr.write( "Invalid derivation path\n" )
