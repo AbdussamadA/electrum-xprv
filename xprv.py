@@ -20,58 +20,52 @@ output_group.add_argument( "-p", "--xprv", help="Generate xprv (default is xpub)
 
 args = parser.parse_args()
 
-master_key = args.master_key
 if args.gen_master:
     key_type = args.gen_master if args.gen_master != "p2pkh" else "standard"
     entropy = ecdsa.util.randrange( pow( 2, entropy_size * 8 ) )
     entropy_in_bytes = entropy.to_bytes( entropy_size , sys.byteorder )
-    xprv,xpub = bip32.bip32_root( entropy_in_bytes, key_type )
-    master_key = xprv
-elif args.master_key == "-":
-    master_key = sys.stdin.readline().strip()
+    master_key = bip32.BIP32Node.from_rootseed( seed=entropy_in_bytes, xtype=key_type )
+elif args.master_key:
+    try:
+        master_key = bip32.BIP32Node.from_xkey( sys.stdin.readline().strip() if args.master_key == '-' else args.master_key )
+    except BaseException:
+        sys.exit( "Invalid master key\n" )
+else:
+    sys.exit( "No master key provided nor generation of master key requested" )
 
 if args.convert:
     if args.gen_master:
         sys.exit( "Convert option cannot be used with generate master option" )
     else:
         convert_type = args.convert if args.convert !="p2pkh" else "standard"
-        if bip32.is_xpub(master_key):
-            xtype, depth, fingerprint, child_number, c, K_or_k = bip32.deserialize_xpub( master_key )
-            master_key = bip32.serialize_xpub( convert_type, c,  K_or_k, depth, fingerprint, child_number )
-        elif bip32.is_xprv(master_key):
-            xtype, depth, fingerprint, child_number, c, K_or_k = bip32.deserialize_xprv( master_key )
-            master_key = bip32.serialize_xprv( convert_type, c,  K_or_k, depth, fingerprint, child_number )
-        else:
-            sys.exit( "Master key is not a valid extended key" )
-
+        master_key = master_key._replace( xtype=convert_type )
+        
 derivation_path = args.derivation_path if args.derivation_path != "m" else "m/"
 if bip32.is_bip32_derivation( derivation_path ):
-	if bip32.is_xpub(master_key):
+	if not master_key.is_private():
 		if args.output_xprv:
 				sys.exit( "Cannot derive extended private key from extended public key\n" )
 		if derivation_path == "m/":
-			print( master_key )
+			print( master_key.to_xpub() )
 		else:
 			try:
-				xpub = bip32.bip32_public_derivation( master_key, "m/", derivation_path )
+				xpub = master_key.subkey_at_public_derivation(  derivation_path )
 				sys.stderr.write( "Derivation Path: {}\n".format( derivation_path ) )
 			except BaseException:
 				sys.exit( "Invalid derivation path. Private derivation is not possible with extended public keys.\n" )
 			else:
-				print( xpub )
-	elif bip32.is_xprv( master_key ):
+				print( xpub.to_xpub() )
+	else:
 		try:
-			xprv,xpub = bip32.bip32_private_derivation( master_key,"m/", derivation_path )    
+			derived_key = master_key.subkey_at_private_derivation( derivation_path )    
 			sys.stderr.write( "Derivation Path: {}\n".format( derivation_path ) )
 		except BaseException:
 			sys.stderr.write( "Invalid derivation path\n" )
 		else:
 			if args.output_xprv:
-				print( xprv )
+				print( derived_key.to_xprv() )
 			else:
-				print( xpub )
-	else:
-		sys.exit( "Invalid Master Key\n" )
+				print( derived_key.to_xpub()  )
 else:
 	print( "Incorrect derivation path" )
 
