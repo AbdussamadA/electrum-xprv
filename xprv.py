@@ -30,8 +30,6 @@ elif args.master_key:
         master_key = bip32.BIP32Node.from_xkey( sys.stdin.readline().strip() if args.master_key == '-' else args.master_key )
     except BaseException:
         sys.exit( "Invalid master key\n" )
-else:
-    sys.exit( "No master key provided nor generation of master key requested" )
 
 if args.convert:
     if args.gen_master:
