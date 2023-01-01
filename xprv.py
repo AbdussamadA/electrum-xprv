@@ -1,6 +1,6 @@
 #!/usr/bin/python3
-from electrum import bip32
-import ecdsa, sys, datetime, argparse
+from electrum import bip32, util
+import sys, datetime, argparse
 
 default_derivation_path = "m/"
 key_types = [ 'standard', 'p2wpkh', 'p2wpkh-p2sh', 'p2wsh-p2sh', 'p2pkh', 'p2wsh' ]
@@ -22,7 +22,7 @@ args = parser.parse_args()
 
 if args.gen_master:
     key_type = args.gen_master if args.gen_master != "p2pkh" else "standard"
-    entropy = ecdsa.util.randrange( pow( 2, entropy_size * 8 ) )
+    entropy = util.randrange( pow( 2, entropy_size * 8 ) )
     entropy_in_bytes = entropy.to_bytes( entropy_size , sys.byteorder )
     master_key = bip32.BIP32Node.from_rootseed( seed=entropy_in_bytes, xtype=key_type )
 elif args.master_key:
